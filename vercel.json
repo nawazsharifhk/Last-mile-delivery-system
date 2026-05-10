@@ -1,9 +1,12 @@
 {
-  "buildCommand": "npm install",
+  "buildCommand": "",
   "outputDirectory": "frontend",
-  "framework": "other",
-  "public": false,
-  "env": {
-    "REACT_APP_API_URL": "@api_url"
-  }
+  "framework": "static",
+  "public": true,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "http://localhost:8000/$1"
+    }
+  ]
 }

@@ -1,179 +1,225 @@
-# Deployment Guide
+# Deployment Guide - Option 1: Vercel Frontend + Local API
+
+## Overview
+- **Frontend**: Deployed on Vercel (static hosting)
+- **Backend API**: Running locally on your machine or a personal server
+- **Database**: Local SQLite
+
+---
 
 ## Frontend Deployment (Vercel)
 
-### Step 1: Prepare Frontend
-The frontend files are in the `frontend/` directory.
+### Prerequisites
+- Vercel account (sign up at https://vercel.com)
+- GitHub account with your repository pushed
 
-### Step 2: Deploy to Vercel
-1. Go to https://vercel.com and sign up/login
-2. Click "New Project"
-3. Import your GitHub repository: `https://github.com/nawazsharifhk/Last-mile-delivery-system`
-4. Configure:
-   - Framework Preset: **Other**
-   - Build Command: (leave empty - static files)
-   - Output Directory: `frontend`
-   - Environment Variables:
-     - `REACT_APP_API_URL`: `https://your-railway-api.up.railway.app` (set after backend deployment)
+### Step 1: Deploy to Vercel
 
-5. Click Deploy
+1. Go to https://vercel.com/dashboard
+2. Click **"New Project"**
+3. Click **"Import Git Repository"**
+4. Select: `nawazsharifhk/Last-mile-delivery-system`
+5. Configure:
+   - **Project Name**: `last-mile-delivery-system` (or your choice)
+   - **Framework Preset**: Select **"Other"** (static files)
+   - **Root Directory**: `./` (default)
+   - **Build Command**: Leave empty (no build needed)
+   - **Output Directory**: `frontend`
+6. Click **"Deploy"**
 
-### Step 3: Update API URL in Frontend
-After the backend is deployed, update `frontend/app.js` to point to your Railway API URL:
-
-```javascript
-const API_BASE_URL = 'https://your-railway-api.up.railway.app';
+### Step 2: Vercel will generate a URL like:
+```
+https://last-mile-delivery-system.vercel.app
 ```
 
 ---
 
-## Backend Deployment (Railway.app)
+## Backend API Setup (Local)
 
-### Step 1: Setup Railway Account
-1. Go to https://railway.app and sign up with GitHub
-2. Create a new project
+The backend API runs on your local machine or a personal server.
 
-### Step 2: Deploy from GitHub
-1. In Railway, click "New Project" → "Deploy from GitHub"
-2. Select your repository: `Last-mile-delivery-system`
-3. Select the `main` branch
-4. Wait for auto-detection of Python environment
+### Prerequisites
+- Python 3.12+
+- Virtual environment set up (already done in `.venv`)
 
-### Step 3: Configure Environment Variables
-In Railway dashboard, go to "Variables" and add:
+### Step 1: Start the API Locally
 
-```
-APP_NAME=Smart Last-Mile Delivery System
-ENV=production
-HOST=0.0.0.0
-PORT=$PORT
-MODEL_PATH=models/failure_model.pkl
-PREPROCESSOR_PATH=models/preprocessor.pkl
-METADATA_PATH=models/metadata.json
-ENABLE_WEATHER=true
-ENABLE_PLACE_GRAPH=true
-ENABLE_COUNTERFACTUAL=true
+```bash
+cd "c:\Users\nawaz\OneDrive\Desktop\minor pro\Last-Mile (anti gravity)\Last-Mile"
+python scripts/run_api.py
 ```
 
-### Step 4: Configure Start Command
-In Railway settings:
-- **Start Command**: `python scripts/run_api.py`
-
-Or Railway may auto-detect from `Procfile` (already created)
-
-### Step 5: Generate Domain
-Railway will auto-generate a public URL like:
+The API will start on:
 ```
-https://last-mile-delivery-system-production-xxxx.up.railway.app
+http://127.0.0.1:8000
 ```
+
+### Step 2: Keep it Running
+- The terminal running the API must stay open
+- If needed, use a process manager like `pm2` (for production-like local hosting)
 
 ---
 
-## Important Notes
+## Connecting Frontend to Backend
 
-### Model Files
-The trained ML model files are included in the repo:
-- `models/failure_model.pkl` (XGBoost model)
-- `models/preprocessor.pkl` (sklearn preprocessing)
-- `models/metadata.json` (model metadata)
+### Option A: Local Development (API on localhost:8000)
+No changes needed! The frontend already makes requests to the local API.
 
-### Database
-The system uses SQLite (app.db) which will be created on first run.
+**Frontend URLs:**
+- Dashboard: `http://localhost:8000/app`
+- API Docs: `http://localhost:8000/docs`
+- Health: `http://localhost:8000/health`
 
-### Data Files
-Required data files are included:
-- `data/processed/orders_clean.csv`
-- `data/processed/features_train.csv`
-- `data/processed/geocode_cache.json`
-- `data/processed/place_graph.json`
+### Option B: Deployed Frontend + Local API (Requires Port Forwarding)
 
-### API Endpoints (After Deployment)
-- Health: `https://your-api.up.railway.app/health`
-- Docs: `https://your-api.up.railway.app/docs`
-- Dashboard: `https://your-api.up.railway.app/app`
-- Orders: `https://your-api.up.railway.app/orders/process`
-- Predict: `https://your-api.up.railway.app/predict/failure`
-- Route Optimize: `https://your-api.up.railway.app/route/optimize`
+If you want the **Vercel frontend** to communicate with your **local API**:
+
+1. **Use ngrok for tunneling** (recommended for testing):
+   ```bash
+   # Install ngrok: https://ngrok.com/download
+   ngrok http 8000
+   ```
+   
+   This gives you a public URL like: `https://xxxx-xx-xxx-xx-x.ngrok.io`
+
+2. **Update frontend to use ngrok URL**:
+   
+   Edit `frontend/app.js` and find the `fetchJson` function:
+   
+   ```javascript
+   async function fetchJson(url, payload, timeoutMs) {
+       // Replace this line:
+       const fullUrl = url;  // Uses relative URL
+       
+       // With:
+       const fullUrl = 'https://xxxx-xx-xxx-xx-x.ngrok.io' + url;
+   ```
+
+3. **Redeploy frontend** to Vercel after making changes
+
+---
+
+## API Endpoints
+
+After starting the API, access these endpoints:
+
+| Endpoint | URL | Purpose |
+|----------|-----|---------|
+| Health Check | `/health` | Verify API is running |
+| API Docs | `/docs` | Interactive API documentation (Swagger) |
+| Dashboard | `/app` | Web UI dashboard |
+| Process Orders | `POST /orders/process` | Process delivery orders |
+| Predict Failure | `POST /predict/failure` | Predict delivery failures |
+| Optimize Route | `POST /route/optimize` | Optimize delivery routes |
+| Counterfactual | `POST /counterfactual/simulate` | Run what-if analysis |
+
+---
+
+## Testing
+
+### Test API is Running Locally
+```bash
+# Health check
+curl http://127.0.0.1:8000/health
+
+# View API docs
+# Open in browser: http://127.0.0.1:8000/docs
+```
+
+### Test Vercel Frontend
+```
+https://last-mile-delivery-system.vercel.app
+```
 
 ---
 
 ## Troubleshooting
 
-### Issue: Python version mismatch
-**Solution**: Railway should auto-detect Python 3.12 from your repo. If not, create a `runtime.txt`:
-```
-python-3.12.10
-```
+### Issue: Frontend can't reach API
+**Solution**: 
+- Ensure API is running: `python scripts/run_api.py`
+- Check API is on localhost:8000
+- Check browser console (F12) for CORS errors
 
-### Issue: Port issues
-Railway sets the `PORT` environment variable. The app auto-handles this in `scripts/run_api.py`.
+### Issue: API crashes when running
+**Solution**:
+- Check Python dependencies: `pip install -r requirements.txt`
+- Check model files exist: `models/failure_model.pkl`, `models/preprocessor.pkl`
+- Check port 8000 is not in use: `netstat -ano | findstr :8000`
 
-### Issue: Model files not found
-Ensure git includes `models/` directory:
+### Issue: Data files not found
+**Solution**:
+- Seed data: `python scripts/seed_data.py`
+- Train model: `python scripts/train_model.py`
+
+### Issue: CORS errors with ngrok
+**Solution**:
+- Add ngrok URL to allowed origins in `src/settings.py`:
+  ```python
+  ALLOWED_ORIGINS = [
+      "https://xxxx-xx-xxx-xx-x.ngrok.io",
+      "https://last-mile-delivery-system.vercel.app"
+  ]
+  ```
+
+---
+
+## Updating Deployment
+
+### Update Frontend
+1. Make changes to `frontend/` files
+2. `git add frontend/`
+3. `git commit -m "Update frontend"`
+4. `git push origin main`
+5. Vercel auto-redeploys (check vercel.com/dashboard)
+
+### Update Backend
+1. Make changes to `src/` or other files
+2. Restart local API: `python scripts/run_api.py`
+3. (No git push needed for local API)
+
+---
+
+## Advanced: Keep API Running 24/7 (Optional)
+
+If you want the API to run permanently on your local machine:
+
+### Option 1: Windows Task Scheduler
+1. Create a `.bat` file:
+   ```batch
+   cd "c:\Users\nawaz\OneDrive\Desktop\minor pro\Last-Mile (anti gravity)\Last-Mile"
+   python scripts/run_api.py
+   ```
+2. Schedule it in Task Scheduler to run on startup
+
+### Option 2: PM2 (Node.js based process manager)
 ```bash
-git add models/
-git commit -m "Add trained models"
-git push
+# Install PM2
+npm install -g pm2
+
+# Create PM2 config file
+pm2 start scripts/run_api.py --name last-mile-api --interpreter python
+
+# Save and auto-start on reboot
+pm2 save
+pm2 startup
 ```
 
-### Issue: Large file uploads fail
-If models are > 100MB, use Git LFS:
-```bash
-git lfs install
-git lfs track "models/*.pkl"
-git add .gitattributes models/
-git commit -m "Use Git LFS for model files"
-git push
-```
+### Option 3: Deploy Backend Separately
+For a more robust setup, deploy the backend to Railway, Render, or PythonAnywhere.
+Then update the frontend URL to point to the cloud API.
 
 ---
 
-## Testing Deployment
+## Summary
 
-After deployment, test the API:
+| Component | Location | How to Access |
+|-----------|----------|---------------|
+| Frontend | Vercel | `https://last-mile-delivery-system.vercel.app` |
+| Backend API | Your machine | `http://127.0.0.1:8000` |
+| Dashboard | Local | `http://127.0.0.1:8000/app` |
+| API Docs | Local | `http://127.0.0.1:8000/docs` |
 
-```bash
-# Health check
-curl https://your-api.up.railway.app/health
+**To use**: Start API locally, then access Vercel frontend URL in browser.
 
-# Get API docs
-curl https://your-api.up.railway.app/docs
-
-# Test prediction
-curl -X POST https://your-api.up.railway.app/predict/failure \
-  -H "Content-Type: application/json" \
-  -d '{"pincode": "123456", "address": "123 Main St"}'
-```
-
----
-
-## Frontend + Backend Communication
-
-The frontend (`app.js`) needs to know the backend URL. Update:
-
-**frontend/app.js:**
-```javascript
-// Change this line:
-const API_BASE_URL = 'http://localhost:8000';
-
-// To:
-const API_BASE_URL = 'https://your-api.up.railway.app';
-```
-
-Then redeploy to Vercel after updating.
-
----
-
-## Rollback
-
-To rollback to a previous version:
-- **Railway**: Use "Deployments" tab and click "Redeploy"
-- **Vercel**: Use "Deployments" and click the previous version
-
----
-
-## Cost Estimates (May 2026)
-
-- **Railway**: Free tier available, $5-20/month for production
-- **Vercel**: Free tier for static sites, $20/month for pro features
 
