@@ -1,10 +1,5 @@
 {
   "buildCommand": "",
-  "outputDirectory": "frontend",
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "http://localhost:8000/$1"
-    }
-  ]
+  "outputDirectory": "frontend"
 }
+
