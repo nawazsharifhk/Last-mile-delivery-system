@@ -1,8 +1,6 @@
 {
   "buildCommand": "",
   "outputDirectory": "frontend",
-  "framework": "static",
-  "public": true,
   "rewrites": [
     {
       "source": "/api/(.*)",
