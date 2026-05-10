@@ -1052,6 +1052,13 @@ async function fetchJson(url, payload, timeoutMs) {
         apiKey = "";
     }
 
+    // Auto-fallback for local/dev runs:
+    // If the backend requires auth and the user hasn’t set an API key in sessionStorage,
+    // use the default dev key configured in src/settings.py.
+    if (!apiKey && url.startsWith("/")) {
+        apiKey = "dev-local-key";
+    }
+
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
