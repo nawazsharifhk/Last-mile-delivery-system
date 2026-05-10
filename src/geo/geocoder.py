@@ -128,10 +128,7 @@ def geocode_address(area: str, city: str, raw_address: str = "", pincode: str = 
         lat, lon, conf = external
         with _CACHE_LOCK:
             _RUNTIME_CACHE[key] = (lat, lon)
-            try:
-                _save_runtime_cache()
-            except Exception:
-                pass
+            _save_runtime_cache()
         return lat, lon, conf
 
     profile = get_city_geo_profile(city)

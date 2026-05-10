@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from functools import lru_cache
-
 import joblib
 import numpy as np
 import pandas as pd
@@ -22,7 +20,6 @@ def _safe_quantile(values: np.ndarray, q: float) -> float:
         return float(np.quantile(values, q, interpolation="higher"))
 
 
-@lru_cache(maxsize=12)
 def calibration_summary(model_path: str, calibration_path: str, alpha: float = DEFAULT_ALPHA) -> dict:
     alpha = float(min(max(alpha, 0.01), 0.3))
 

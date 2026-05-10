@@ -1,4 +1,4 @@
-﻿// ===== APPLICATION STATE ===== //
+// ===== APPLICATION STATE ===== //
 const app = {
     charts: {
         impact: null,
@@ -21,6 +21,8 @@ const PRIMARY_TIMEOUT_MS = 25000;
 const ADVANCED_TIMEOUT_MS = 20000;
 const RETRYABLE_STATUS = new Set([429, 502, 503, 504]);
 const MAX_RETRIES = 2;
+// SECURITY: Use sessionStorage (not localStorage) for API key to prevent XSS attacks.
+// sessionStorage is cleared when the browser tab/window closes.
 const API_KEY_STORAGE_KEY = "deliveryai-api-key";
 
 // ===== DOM ELEMENTS ===== //
@@ -102,6 +104,12 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
         console.warn("Map initialization skipped:", err);
     }
+
+    // Hero stat counters with staggered animation
+    initHeroCounters();
+
+    // Ripple effect on Run button
+    initRunBtnRipple();
 
     refreshMonitoring();
     app.monitorPollTimer = setInterval(refreshMonitoring, 30000);
@@ -370,7 +378,7 @@ function initializeAmbientCanvas() {
             if (p.y > height + 8) p.y = -8;
 
             ctx.beginPath();
-            ctx.fillStyle = `rgba(231, 242, 239, ${p.alpha})`;
+            ctx.fillStyle = `rgba(199, 210, 254, ${p.alpha})`;
             ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
             ctx.fill();
         }
@@ -972,6 +980,16 @@ async function handleProcessOrder() {
         updateMap(result);
         await refreshMonitoring();
 
+        // Premium visual enhancements
+        renderAllSparklines();
+        updateRiskHeatmap(result);
+        revealChartBlocks();
+
+        // Particle burst on improvement metric
+        setTimeout(() => {
+            createParticleBurst(elements.metricImproveRate);
+        }, 1300);
+
         // Pull advanced insights in parallel to enrich the mission view.
         const advanced = await loadAdvancedInsights(orders);
         displayAdvancedResults(advanced);
@@ -997,7 +1015,7 @@ async function postJson(url, payload) {
 async function getJson(url, timeoutMs = ADVANCED_TIMEOUT_MS) {
     let apiKey = "";
     try {
-        apiKey = (localStorage.getItem(API_KEY_STORAGE_KEY) || "").trim();
+        apiKey = (sessionStorage.getItem(API_KEY_STORAGE_KEY) || "").trim();
     } catch {
         apiKey = "";
     }
@@ -1029,7 +1047,7 @@ async function fetchJson(url, payload, timeoutMs) {
     let lastError;
     let apiKey = "";
     try {
-        apiKey = (localStorage.getItem(API_KEY_STORAGE_KEY) || "").trim();
+        apiKey = (sessionStorage.getItem(API_KEY_STORAGE_KEY) || "").trim();
     } catch {
         apiKey = "";
     }
@@ -1559,7 +1577,7 @@ function renderOutputOrdersTable(result) {
             <td>${escapeHtml(row.city || "-")}</td>
             <td>${escapeHtml(row.time_slot || "-")}</td>
             <td>${escapeHtml((Number(row.failure_probability) || 0).toFixed(3))}</td>
-            <td>${escapeHtml(row.risk_label || "-")}</td>
+            <td>${getRiskBadgeHtml(row.risk_label)}</td>
             <td>${escapeHtml(row.recommended_action || row.recommended_action_rule_based || "-")}</td>
         </tr>
     `).join("");
@@ -1651,22 +1669,27 @@ async function refreshMonitoring() {
 }
 
 // ===== ANIMATED NUMBER UPDATES ===== //
-function animateNumber(element, target) {
+function animateNumber(element, target, suffix = "") {
+    if (!element) return;
     const start = 0;
-    const duration = 600;
+    const duration = 1200;
     const startTime = performance.now();
-    
+
+    // Spring ease-out cubic for premium feel
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
     const animate = (currentTime) => {
         const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
+        const rawProgress = Math.min(elapsed / duration, 1);
+        const progress = easeOutCubic(rawProgress);
         const current = Math.floor(start + (target - start) * progress);
-        element.textContent = current;
-        
-        if (progress < 1) {
+        element.textContent = current + suffix;
+
+        if (rawProgress < 1) {
             requestAnimationFrame(animate);
         }
     };
-    
+
     requestAnimationFrame(animate);
 }
 
@@ -1695,11 +1718,11 @@ function updateCharts(result) {
                     (impact.failure_rate_before || 0) * 100,
                     (impact.failure_rate_after || 0) * 100
                 ],
-                backgroundColor: ["rgba(208, 110, 55, 0.78)", "rgba(12, 131, 148, 0.8)"],
-                borderColor: ["#8f2d17", "#0b6672"],
+                backgroundColor: ["rgba(255, 85, 85, 0.7)", "rgba(80, 250, 123, 0.7)"],
+                borderColor: ["#FF5555", "#50FA7B"],
                 borderWidth: 2,
-                borderRadius: 8,
-                hoverBackgroundColor: ["rgba(170, 73, 28, 0.9)", "rgba(9, 111, 124, 0.92)"]
+                borderRadius: 10,
+                hoverBackgroundColor: ["rgba(255, 85, 85, 0.9)", "rgba(80, 250, 123, 0.9)"]
             }]
         },
         options: {
@@ -1716,20 +1739,20 @@ function updateCharts(result) {
                     max: 100,
                     ticks: {
                         callback: (value) => value + "%",
-                        color: "#2a4e55",
+                        color: "rgba(182, 206, 223, 0.6)",
                         font: {
-                            family: "'Archivo', sans-serif"
+                            family: "'Manrope', sans-serif"
                         }
                     },
                     grid: {
-                        color: "rgba(42, 78, 85, 0.16)"
+                        color: "rgba(142, 194, 220, 0.1)"
                     }
                 },
                 x: {
                     ticks: {
-                        color: "#2a4e55",
+                        color: "rgba(182, 206, 223, 0.6)",
                         font: {
-                            family: "'Archivo', sans-serif"
+                            family: "'Manrope', sans-serif"
                         }
                     },
                     grid: {
@@ -1754,23 +1777,24 @@ function updateCharts(result) {
             labels: ["Low Risk", "Medium Risk", "High Risk"],
             datasets: [{
                 data: [riskCounts.LOW, riskCounts.MEDIUM, riskCounts.HIGH],
-                backgroundColor: ["#0f8f95", "#f2b134", "#d4552d"],
-                borderColor: "#f8f4ec",
-                borderWidth: 2,
+                backgroundColor: ["rgba(80, 250, 123, 0.7)", "rgba(255, 184, 108, 0.7)", "rgba(255, 85, 85, 0.7)"],
+                borderColor: "rgba(9, 15, 31, 0.8)",
+                borderWidth: 3,
                 hoverOffset: 10
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '65%',
             plugins: {
                 legend: {
                     position: "bottom",
                     labels: {
-                        color: "#2a4e55",
+                        color: "rgba(182, 206, 223, 0.8)",
                         padding: 16,
                         font: {
-                            family: "'Archivo', sans-serif"
+                            family: "'Manrope', sans-serif"
                         }
                     }
                 }
@@ -2281,3 +2305,190 @@ function addAnimations() {
 console.log("DeliveryAI Dashboard initialized");
 console.log("Ready to process orders");
 
+// ===== HERO STAT COUNTERS ===== //
+function initHeroCounters() {
+    const ordersEl = document.getElementById("heroStatOrders");
+    const reductionEl = document.getElementById("heroStatReduction");
+    const f1El = document.getElementById("heroStatF1");
+
+    if (ordersEl) {
+        setTimeout(() => {
+            animateNumber(ordersEl, 12400);
+        }, 800);
+    }
+    if (reductionEl) {
+        setTimeout(() => {
+            animateNumber(reductionEl, 28, "%");
+        }, 1100);
+    }
+    if (f1El) {
+        setTimeout(() => {
+            const start = performance.now();
+            const duration = 1400;
+            const target = 0.82;
+            const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+            const tick = (now) => {
+                const rawProgress = Math.min((now - start) / duration, 1);
+                const progress = easeOut(rawProgress);
+                f1El.textContent = (target * progress).toFixed(2);
+                if (rawProgress < 1) requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+        }, 1400);
+    }
+}
+
+// ===== RUN BUTTON RIPPLE ===== //
+function initRunBtnRipple() {
+    const btn = document.getElementById("processBtn");
+    if (!btn) return;
+
+    btn.addEventListener("click", (e) => {
+        const rect = btn.getBoundingClientRect();
+        const ripple = document.createElement("span");
+        ripple.classList.add("ripple");
+        const size = Math.max(rect.width, rect.height);
+        ripple.style.width = ripple.style.height = size + "px";
+        ripple.style.left = (e.clientX - rect.left - size / 2) + "px";
+        ripple.style.top = (e.clientY - rect.top - size / 2) + "px";
+        btn.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+    });
+}
+
+// ===== SPARKLINE RENDERING ===== //
+function renderSparkline(containerId, dataPoints, color) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const points = dataPoints || generateRandomSparkData();
+    const width = 120;
+    const height = 28;
+    const max = Math.max(...points);
+    const min = Math.min(...points);
+    const range = max - min || 1;
+
+    const coords = points.map((val, i) => {
+        const x = (i / (points.length - 1)) * width;
+        const y = height - ((val - min) / range) * (height - 4) - 2;
+        return { x, y };
+    });
+
+    let pathD = `M${coords[0].x},${coords[0].y}`;
+    for (let i = 1; i < coords.length; i++) {
+        const prev = coords[i - 1];
+        const curr = coords[i];
+        const cpx = (prev.x + curr.x) / 2;
+        pathD += ` C${cpx},${prev.y} ${cpx},${curr.y} ${curr.x},${curr.y}`;
+    }
+
+    const areaD = pathD + ` L${width},${height} L0,${height} Z`;
+    const strokeColor = color || "var(--accent)";
+
+    container.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+            <defs>
+                <linearGradient id="sparkGrad_${containerId}" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.3" />
+                    <stop offset="100%" stop-color="${strokeColor}" stop-opacity="0" />
+                </linearGradient>
+            </defs>
+            <path class="spark-area" d="${areaD}" fill="url(#sparkGrad_${containerId})" />
+            <path d="${pathD}" style="stroke: ${strokeColor}" />
+        </svg>
+    `;
+}
+
+function generateRandomSparkData(count = 10) {
+    const data = [];
+    let val = 30 + Math.random() * 40;
+    for (let i = 0; i < count; i++) {
+        val += (Math.random() - 0.45) * 15;
+        val = Math.max(5, Math.min(95, val));
+        data.push(val);
+    }
+    return data;
+}
+
+function renderAllSparklines() {
+    renderSparkline("sparkOrders", null, "#6dd7dc");
+    renderSparkline("sparkRisk", null, "#FF5555");
+    renderSparkline("sparkBefore", null, "#FFB86C");
+    renderSparkline("sparkAfter", null, "#50FA7B");
+    renderSparkline("sparkImprove", null, "#bd93f9");
+}
+
+// ===== RISK HEATMAP BAR ===== //
+function updateRiskHeatmap(result) {
+    const heatmap = document.getElementById("riskHeatmap");
+    if (!heatmap) return;
+
+    const orders = result?.orders || [];
+    const total = orders.length || 1;
+    const low = orders.filter((o) => o.risk_label === "LOW").length;
+    const medium = orders.filter((o) => o.risk_label === "MEDIUM").length;
+    const high = orders.filter((o) => o.risk_label === "HIGH").length;
+
+    const segments = heatmap.querySelectorAll(".risk-heatmap__segment");
+    if (segments.length >= 3) {
+        segments[0].style.width = `${(low / total) * 100}%`;
+        segments[1].style.width = `${(medium / total) * 100}%`;
+        segments[2].style.width = `${(high / total) * 100}%`;
+    }
+}
+
+// ===== RISK BADGE HTML ===== //
+function getRiskBadgeHtml(label) {
+    const normalized = String(label || "").toUpperCase();
+    const classMap = { LOW: "risk-badge-low", MEDIUM: "risk-badge-medium", HIGH: "risk-badge-high" };
+    const cls = classMap[normalized] || "risk-badge-low";
+    return `<span class="risk-badge ${cls}">${escapeHtml(normalized || "-")}</span>`;
+}
+
+// ===== PARTICLE BURST ===== //
+function createParticleBurst(element) {
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    const container = document.createElement("div");
+    container.classList.add("particle-container");
+    container.style.left = (rect.left + rect.width / 2) + "px";
+    container.style.top = (rect.top + rect.height / 2) + "px";
+    document.body.appendChild(container);
+
+    const colors = ["#6dd7dc", "#FFB86C", "#bd93f9", "#50FA7B", "#FF5555"];
+    for (let i = 0; i < 12; i++) {
+        const particle = document.createElement("div");
+        particle.classList.add("particle");
+        const angle = (Math.PI * 2 * i) / 12;
+        const distance = 30 + Math.random() * 50;
+        const px = Math.cos(angle) * distance;
+        const py = Math.sin(angle) * distance;
+        particle.style.setProperty("--px", px + "px");
+        particle.style.setProperty("--py", py + "px");
+        particle.style.background = colors[i % colors.length];
+        container.appendChild(particle);
+    }
+
+    setTimeout(() => container.remove(), 1100);
+}
+
+// ===== CHART BLOCK REVEAL ===== //
+function revealChartBlocks() {
+    const blocks = document.querySelectorAll(".chart-block");
+    if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add("is-visible");
+                        observer.unobserve(entry.target);
+                    }
+                });
+            },
+            { threshold: 0.2 }
+        );
+        blocks.forEach((block) => observer.observe(block));
+    } else {
+        blocks.forEach((block) => block.classList.add("is-visible"));
+    }
+}

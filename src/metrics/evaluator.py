@@ -55,8 +55,8 @@ def estimate_after_failure_rate(records_df: pd.DataFrame) -> float:
             return float(pd.Series(expected).clip(lower=0.0, upper=1.0).mean())
 
     adjusted = records_df["failure_probability"].astype(float).copy()
-    high_mask = adjusted >= 0.7
-    medium_mask = (adjusted >= 0.45) & (adjusted < 0.7)
+    high_mask = adjusted >= 0.6
+    medium_mask = (adjusted >= 0.4) & (adjusted < 0.6)
 
     adjusted.loc[high_mask] = (adjusted.loc[high_mask] * 0.5).clip(lower=0.0)
     adjusted.loc[medium_mask] = (adjusted.loc[medium_mask] * 0.75).clip(lower=0.0)
@@ -76,5 +76,5 @@ def summarize_business_impact(records_df: pd.DataFrame, route_distance_km: float
         "route_distance_before_km": round(float(naive_distance_km), 2),
         "route_distance_after_km": round(float(route_distance_km), 2),
         "route_distance_improvement": round(route_improvement, 4),
-        "high_risk_orders": int((records_df["failure_probability"].astype(float) >= 0.7).sum()),
+        "high_risk_orders": int((records_df["failure_probability"].astype(float) >= 0.6).sum()),
     }

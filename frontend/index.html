@@ -6,7 +6,7 @@
     <title>DeliveryAI Studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="/static/styles.css" />
@@ -55,6 +55,18 @@
                 <span class="launch-water"></span>
             </div>
 
+            <!-- Animated Route SVG -->
+            <svg class="hero-route-svg" viewBox="0 0 1400 700" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                <path d="M120,580 C200,540 280,420 380,380 S520,300 620,340 S780,420 880,360 S1040,200 1140,240 S1280,320 1340,280" />
+                <path d="M200,620 C300,580 400,500 500,460 S650,380 750,400 S900,340 1000,300 S1150,260 1250,220" style="animation-delay: 0.8s; opacity: 0.2;" />
+                <circle class="route-node" cx="120" cy="580" r="5" style="animation-delay: 0.5s" />
+                <circle class="route-node" cx="380" cy="380" r="4" style="animation-delay: 1.2s" />
+                <circle class="route-node" cx="620" cy="340" r="4" style="animation-delay: 1.8s" />
+                <circle class="route-node" cx="880" cy="360" r="4" style="animation-delay: 2.4s" />
+                <circle class="route-node" cx="1140" cy="240" r="5" style="animation-delay: 3s" />
+                <circle class="route-node" cx="1340" cy="280" r="3" style="animation-delay: 3.5s" />
+            </svg>
+
             <header class="launch-topbar">
                 <p class="launch-brand">DeliveryAI studio</p>
                 <nav class="launch-nav" aria-label="Primary navigation">
@@ -70,9 +82,23 @@
                 <p class="launch-kicker">A RISK, DISPATCH & MOTION INTELLIGENCE STUDIO</p>
                 <h1 class="launch-title"><span>Creating the</span> unexpected certainty</h1>
                 <button id="goDashboardBtn" class="launch-cta" type="button">
-                    View our work
-                    <i class="fas fa-arrow-right"></i>
+                    Launch Command Center
+                    <i class="fas fa-rocket"></i>
                 </button>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <p class="hero-stat__number" id="heroStatOrders">0</p>
+                        <p class="hero-stat__label">Deliveries Optimized</p>
+                    </div>
+                    <div class="hero-stat">
+                        <p class="hero-stat__number" id="heroStatReduction">0%</p>
+                        <p class="hero-stat__label">Failure Reduction</p>
+                    </div>
+                    <div class="hero-stat">
+                        <p class="hero-stat__number" id="heroStatF1">0</p>
+                        <p class="hero-stat__label">Model F1 Score</p>
+                    </div>
+                </div>
             </div>
 
             <section class="home-detail-grid" aria-label="Studio overview">
@@ -102,40 +128,52 @@
         </section>
 
         <section id="pageDashboard" class="page-view page-dashboard" aria-label="Analysis dashboard page">
-            <header class="dash-topbar panel animate-in">
+            <header class="dash-topbar panel panel-glow animate-in">
                 <div>
-                    <p class="panel-kicker">DeliveryAI Command</p>
+                    <p class="panel-kicker"><span class="status-dot"></span>DeliveryAI Command</p>
                     <h1 class="dash-title">System Dashboard</h1>
                 </div>
                 <nav class="dash-nav">
-                    <button class="dash-nav-btn" data-route="home" type="button">Back to Index</button>
-                    <button class="dash-nav-btn" data-scroll-target="map" type="button" data-route="dashboard">Map</button>
-                    <button class="dash-nav-btn" data-scroll-target="impactChart" type="button" data-route="dashboard">Charts</button>
+                    <button class="dash-nav-btn" data-route="home" type="button"><i class="fas fa-arrow-left"></i> Index</button>
+                    <button class="dash-nav-btn" data-scroll-target="map" type="button" data-route="dashboard"><i class="fas fa-map-marked-alt"></i> Map</button>
+                    <button class="dash-nav-btn" data-scroll-target="impactChart" type="button" data-route="dashboard"><i class="fas fa-chart-bar"></i> Charts</button>
                 </nav>
             </header>
 
             <section class="kpi-ribbon animate-in">
                 <article class="kpi-card kpi-a">
-                    <p class="kpi-title">Orders Processed</p>
+                    <p class="kpi-title"><i class="fas fa-boxes"></i> Orders Processed</p>
                     <p class="kpi-number" id="metricTotalOrders">0</p>
+                    <div class="kpi-sparkline" id="sparkOrders"></div>
                 </article>
                 <article class="kpi-card kpi-b">
-                    <p class="kpi-title">High Risk</p>
+                    <p class="kpi-title"><i class="fas fa-exclamation-triangle"></i> High Risk</p>
                     <p class="kpi-number" id="metricHighRisk">0</p>
+                    <div class="kpi-sparkline" id="sparkRisk"></div>
                 </article>
                 <article class="kpi-card kpi-c">
-                    <p class="kpi-title">Failure Before</p>
+                    <p class="kpi-title"><i class="fas fa-arrow-down"></i> Failure Before</p>
                     <p class="kpi-number" id="metricBeforeRate">0%</p>
+                    <div class="kpi-sparkline" id="sparkBefore"></div>
                 </article>
                 <article class="kpi-card kpi-d">
-                    <p class="kpi-title">Failure After</p>
+                    <p class="kpi-title"><i class="fas fa-arrow-up"></i> Failure After</p>
                     <p class="kpi-number" id="metricAfterRate">0%</p>
+                    <div class="kpi-sparkline" id="sparkAfter"></div>
                 </article>
                 <article class="kpi-card kpi-e">
-                    <p class="kpi-title">Improvement</p>
+                    <p class="kpi-title"><i class="fas fa-chart-line"></i> Improvement</p>
                     <p class="kpi-number" id="metricImproveRate">0%</p>
+                    <div class="kpi-sparkline" id="sparkImprove"></div>
                 </article>
             </section>
+
+            <!-- Risk Heatmap Bar -->
+            <div class="risk-heatmap animate-in" id="riskHeatmap">
+                <div class="risk-heatmap__segment risk-heatmap__segment--low" style="width: 33%"></div>
+                <div class="risk-heatmap__segment risk-heatmap__segment--medium" style="width: 34%"></div>
+                <div class="risk-heatmap__segment risk-heatmap__segment--high" style="width: 33%"></div>
+            </div>
 
             <section class="panel animate-in">
                 <div class="panel-top">
@@ -322,10 +360,10 @@
             </section>
 
             <section class="advanced-grid animate-in">
-                <article class="panel panel-advanced">
+                <article class="panel panel-advanced panel-glow panel-accent-cyan">
                     <div class="panel-top">
                         <div>
-                            <p class="panel-kicker">Conformal Layer</p>
+                            <p class="panel-kicker"><i class="fas fa-shield-alt"></i> Conformal Layer</p>
                             <h2 class="panel-heading">Uncertainty</h2>
                         </div>
                     </div>
@@ -346,10 +384,10 @@
                     </details>
                 </article>
 
-                <article class="panel panel-advanced">
+                <article class="panel panel-advanced panel-glow panel-accent-amber">
                     <div class="panel-top">
                         <div>
-                            <p class="panel-kicker">Intervention Policy</p>
+                            <p class="panel-kicker"><i class="fas fa-crosshairs"></i> Intervention Policy</p>
                             <h2 class="panel-heading">Causal Action</h2>
                         </div>
                     </div>
@@ -370,10 +408,10 @@
                     </details>
                 </article>
 
-                <article class="panel panel-advanced">
+                <article class="panel panel-advanced panel-glow panel-accent-purple">
                     <div class="panel-top">
                         <div>
-                            <p class="panel-kicker">Simulation Engine</p>
+                            <p class="panel-kicker"><i class="fas fa-industry"></i> Simulation Engine</p>
                             <h2 class="panel-heading">Digital Twin</h2>
                         </div>
                     </div>
@@ -396,10 +434,10 @@
             </section>
 
             <section class="capabilities animate-in">
-                <article class="cap-card"><h4>Address Intelligence</h4><p>Parsing + confidence + geo validation.</p></article>
-                <article class="cap-card"><h4>Routing</h4><p>Sequence optimization with impact metrics.</p></article>
-                <article class="cap-card"><h4>Prediction</h4><p>Risk scoring with explainability.</p></article>
-                <article class="cap-card"><h4>Simulation</h4><p>Counterfactual + digital twin outcomes.</p></article>
+                <article class="cap-card"><i class="fas fa-map-pin" style="color: var(--accent); font-size: 20px; margin-bottom: 8px;"></i><h4>Address Intelligence</h4><p>NLP parsing, confidence scoring, and geo validation for messy addresses.</p></article>
+                <article class="cap-card"><i class="fas fa-route" style="color: var(--accent-2); font-size: 20px; margin-bottom: 8px;"></i><h4>Routing</h4><p>Nearest-neighbor + 2-opt optimization with failure probability awareness.</p></article>
+                <article class="cap-card"><i class="fas fa-brain" style="color: var(--accent-3); font-size: 20px; margin-bottom: 8px;"></i><h4>Prediction</h4><p>XGBoost ML model with F1=0.82 and 13 engineered features.</p></article>
+                <article class="cap-card"><i class="fas fa-flask" style="color: var(--success); font-size: 20px; margin-bottom: 8px;"></i><h4>Simulation</h4><p>Counterfactual what-if analysis + digital twin impact modeling.</p></article>
             </section>
         </section>
     </main>

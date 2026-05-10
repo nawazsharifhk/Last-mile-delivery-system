@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import zlib
+from datetime import datetime
 import numpy as np
 import pandas as pd
 
 from src.address.confidence import address_confidence
 from src.address.parser import parse_address
 from src.geo.geocoder import geocode_address
+from src.geo.geocoder import _normalize_locality
 from src.geo.validator import validate_geo
 
 
@@ -52,6 +54,9 @@ def _derive_time_and_area_features(work_df: pd.DataFrame) -> pd.DataFrame:
 def build_feature_frame(df: pd.DataFrame, area_risk_df: pd.DataFrame) -> pd.DataFrame:
     work_df = df.copy()
 
+    if "delivery_status" not in work_df.columns:
+        raise ValueError("Missing required 'delivery_status' column in training data")
+
     parsed = work_df.apply(
         lambda row: parse_address(str(row["address_raw"]), str(row.get("pincode", ""))),
         axis=1,
@@ -92,7 +97,8 @@ def build_feature_frame(df: pd.DataFrame, area_risk_df: pd.DataFrame) -> pd.Data
     work_df["geo_confidence"] = validation.map(lambda r: r.geo_confidence)
 
     area_risk_df = area_risk_df.copy()
-    area_risk_df["area"] = area_risk_df["area"].str.lower()
+    area_risk_df["area"] = area_risk_df["area"].apply(lambda x: _normalize_locality(str(x)))
+    work_df["area"] = work_df["area"].apply(lambda x: _normalize_locality(str(x)))
     work_df = work_df.merge(area_risk_df[["area", "area_risk_score"]], how="left", on="area")
     work_df["area_risk_score"] = work_df["area_risk_score"].fillna(0.25)
 
@@ -118,7 +124,8 @@ def build_inference_feature_frame(df: pd.DataFrame) -> pd.DataFrame:
     if "past_failures" not in work_df.columns:
         work_df["past_failures"] = 0
     if "order_datetime" not in work_df.columns:
-        work_df["order_datetime"] = "2026-03-10 12:00:00"
+        now = datetime.now().strftime("%Y-%m-%d 12:00:00")
+        work_df["order_datetime"] = now
 
     work_df = _derive_time_and_area_features(work_df)
     return work_df

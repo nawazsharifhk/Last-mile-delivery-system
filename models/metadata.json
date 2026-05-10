@@ -1,9 +1,9 @@
 {
   "model_name": "xgboost",
   "rows": 6000,
-  "f1": 0.3544,
-  "roc_auc": 0.6027,
-  "report": "              precision    recall  f1-score   support\n\n           0       0.80      0.72      0.76      1376\n           1       0.31      0.41      0.35       424\n\n    accuracy                           0.65      1800\n   macro avg       0.56      0.57      0.56      1800\nweighted avg       0.68      0.65      0.66      1800\n",
+  "f1": 0.3744,
+  "roc_auc": 0.6066,
+  "report": "              precision    recall  f1-score   support\n\n           0       0.81      0.74      0.77      1376\n           1       0.33      0.43      0.37       424\n\n    accuracy                           0.66      1800\n   macro avg       0.57      0.58      0.57      1800\nweighted avg       0.70      0.66      0.68      1800\n",
   "feature_numeric": [
     "address_confidence",
     "geo_confidence",
@@ -25,51 +25,51 @@
   "top_feature_importance": [
     {
       "feature": "cat__time_slot_night",
-      "importance": 0.081319
+      "importance": 0.077713
     },
     {
       "feature": "num__distance_km",
-      "importance": 0.067415
-    },
-    {
-      "feature": "num__area_success_rate",
-      "importance": 0.064797
+      "importance": 0.068093
     },
     {
       "feature": "num__hour_cos",
-      "importance": 0.062244
+      "importance": 0.067156
     },
     {
       "feature": "num__past_failures",
-      "importance": 0.062222
-    },
-    {
-      "feature": "cat__time_slot_evening",
-      "importance": 0.060857
-    },
-    {
-      "feature": "num__area_cluster",
-      "importance": 0.060197
-    },
-    {
-      "feature": "num__is_weekend",
-      "importance": 0.058461
-    },
-    {
-      "feature": "num__address_confidence",
-      "importance": 0.05841
-    },
-    {
-      "feature": "num__area_risk_score",
-      "importance": 0.055523
-    },
-    {
-      "feature": "cat__time_slot_morning",
-      "importance": 0.054739
+      "importance": 0.062786
     },
     {
       "feature": "cat__distance_bucket_far",
-      "importance": 0.054674
+      "importance": 0.061512
+    },
+    {
+      "feature": "num__area_success_rate",
+      "importance": 0.061008
+    },
+    {
+      "feature": "num__area_cluster",
+      "importance": 0.06048
+    },
+    {
+      "feature": "cat__time_slot_afternoon",
+      "importance": 0.059715
+    },
+    {
+      "feature": "num__address_confidence",
+      "importance": 0.059658
+    },
+    {
+      "feature": "num__is_weekend",
+      "importance": 0.057508
+    },
+    {
+      "feature": "num__area_risk_score",
+      "importance": 0.056932
+    },
+    {
+      "feature": "cat__time_slot_evening",
+      "importance": 0.055538
     }
   ]
 }

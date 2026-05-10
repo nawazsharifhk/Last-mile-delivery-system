@@ -7,9 +7,9 @@ from src.ml.features import FEATURE_CATEGORICAL, FEATURE_NUMERIC, build_inferenc
 
 
 def risk_label(probability: float) -> str:
-    if probability >= 0.70:
+    if probability >= 0.60:
         return "HIGH"
-    if probability >= 0.45:
+    if probability >= 0.40:
         return "MEDIUM"
     return "LOW"
 

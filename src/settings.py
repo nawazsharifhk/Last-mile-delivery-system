@@ -93,3 +93,14 @@ def is_rate_limit_enabled() -> bool:
     if isinstance(api_cfg, dict) and "rate_limit_enabled" in api_cfg:
         return bool(api_cfg.get("rate_limit_enabled"))
     return bool(get_env_settings().rate_limit_enabled)
+
+
+# Export functions for API security
+__all__ = [
+    "get_env_settings",
+    "get_yaml_config",
+    "get_allowed_origins",
+    "get_city_geo_profile",
+    "is_auth_required",
+    "is_rate_limit_enabled",
+]

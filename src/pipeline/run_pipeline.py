@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 import pandas as pd
 
 from src.address.confidence import address_confidence
@@ -100,7 +101,16 @@ def process_orders(orders: list[dict], model_path: str, place_graph_payload: dic
 
     predicted_df = predict_failure(model_feature_df, model_path)
 
-    weather_df = load_weather_table("data/raw/weather_sample.csv")
+    weather_csv_path = "data/raw/weather_sample.csv"
+    if not Path(weather_csv_path).exists():
+        weather_df = pd.DataFrame()
+    else:
+        try:
+            weather_df = load_weather_table(weather_csv_path)
+        except Exception:
+            weather_df = pd.DataFrame()
+    
+    predicted_df = predicted_df.reset_index(drop=True)
     for idx, row in predicted_df.iterrows():
         current = records[idx]
         d_key = date_only(orders[idx].get("order_datetime", "2026-03-10 09:00:00"))
@@ -117,7 +127,7 @@ def process_orders(orders: list[dict], model_path: str, place_graph_payload: dic
         adjusted_prob = weather_risk_adjustment(float(row["failure_probability"]), w_score)
         current["failure_probability"] = adjusted_prob
         current["weather_signal"] = weather_signal
-        current["risk_label"] = "HIGH" if adjusted_prob >= 0.7 else "MEDIUM" if adjusted_prob >= 0.45 else "LOW"
+        current["risk_label"] = "HIGH" if adjusted_prob >= 0.6 else "MEDIUM" if adjusted_prob >= 0.4 else "LOW"
         current["reasons"] = top_reasons(current)
 
         matched_place_id = match_place(
