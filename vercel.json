@@ -1,0 +1,9 @@
+{
+  "buildCommand": "npm install",
+  "outputDirectory": "frontend",
+  "framework": "other",
+  "public": false,
+  "env": {
+    "REACT_APP_API_URL": "@api_url"
+  }
+}
